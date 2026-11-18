@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "TabMind - AI 탭 정리",
+  "version": "0.3.0",
+  "description": "AI 정리 요청 입력, 별도 창, 그룹 정리 실행 취소",
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*"
+  ],
+  "action": {
+    "default_title": "TabMind",
+    "default_popup": "popup.html"
+  }
+}
