@@ -1,9 +1,10 @@
 import json
 import os
+import secrets
 from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel, Field
 from google import genai
 from google.genai import types
@@ -20,7 +21,26 @@ class SuggestRequest(BaseModel):
     instruction: str = Field(default="", max_length=1500)
     tabs: list[Tab] = Field(min_length=1, max_length=100)
 
-@app.post('/suggest')
+def verify_access(
+        authorization: str | None = Header(default=None),
+):
+    if os.getenv("APP_ENV", "local") != "production":
+        return
+
+    expected_token = os.getenv("TABMIND_ACCESS_TOKEN")
+
+    if not expected_token:
+        raise HTTPException(503, "서버 인증 설정이 없습니다.")
+
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "인증이 필요합니다.")
+
+    provided_token = authorization.removeprefix("Bearer ")
+
+    if not secrets.compare_digest(provided_token, expected_token):
+        raise HTTPException(403, "접근 권한이 없습니다.")
+
+@app.post('/suggest', dependencies=[Depends(verify_access)])
 def suggest(payload: SuggestRequest):
     if not os.getenv('GEMINI_API_KEY'):
         raise HTTPException(503, 'GEMINI_API_KEY가 없습니다. backend/.env를 확인하세요.')
